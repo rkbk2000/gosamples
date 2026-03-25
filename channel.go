@@ -67,17 +67,28 @@ func getResults(cd *configDetails) {
 
 func toggleLoop(ticker *time.Ticker, cd *configDetails) {
 	defer ticker.Stop()
-	for {
+	for tm := range ticker.C {
+		fmt.Printf("Checking at %v\n", tm)
 		select {
-		case tm := <-ticker.C:
-			fmt.Printf("Checking at %v\n", tm)
-			select {
-			case done := <-cd.discoveryCompleted:
-				fmt.Printf("Previous task done, running next task %v\n", done)
-				go getResults(cd)
-			default:
-				fmt.Println("Previous task still running, skipping")
-			}
+		case done := <-cd.discoveryCompleted:
+			fmt.Printf("Previous task done, running next task %v\n", done)
+			go getResults(cd)
+		default:
+			fmt.Println("Previous task still running, skipping")
 		}
 	}
+}
+
+func bufferedChannelDemo() {
+	ch := make(chan int, 50)
+	go func() {
+		for value := range ch {
+			fmt.Println("Received:", value)
+		}
+	}()
+
+	for i := 1; i < 100; i++ {
+		ch <- i
+	}
+	close(ch)
 }

@@ -3,8 +3,10 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"log"
+	"runtime/debug"
 	"strconv"
 	"strings"
 	"time"
@@ -12,12 +14,19 @@ import (
 	"github.com/rkbk2000/samples/access"
 )
 
+var memprofile = flag.String("memprofile", "", "write memory profile to this file")
+
 // CommentDemo - This demonstrates golint
 func CommentDemo() {
 
 	a := 101
 	fmt.Println(a)
 	fmt.Print()
+}
+
+type JsonStruct struct {
+	CapacityVal int
+	TagName     string `json:"tagName"`
 }
 
 func update(id string) {
@@ -35,18 +44,46 @@ func update(id string) {
 	fmt.Println(ub)
 }
 
+func printStrings() {
+	var tm []*string
+	s1 := "123"
+	s2 := "345"
+	tm = append(tm, &s1)
+	tm = append(tm, &s2)
+	fmt.Printf(" Timestamps:")
+	for _, s := range tm {
+		fmt.Printf(" %s ", *s)
+	}
+	fmt.Println()
+}
+
 func main() {
+	checkMapCopy()
+	fmt.Println("Press enter to continue:")
+	var val int
+	fmt.Scanf("%d", val)
+
+	s1 := JsonStruct{1, "a"}
+	b, e := json.Marshal(&s1)
+	if e == nil {
+		fmt.Println(string(b))
+	}
+	netpanic()
+	debug.PrintStack()
+	printStrings()
+	GenericsExample()
+
+	syncMapTest()
+
 	raceDemo()
 	matches("monitor:14a6b829-6100-49a3-ba3b-a0ecebedab67:resourceList")
 	matches("monitor:14a6b829-6100-49a3-ba3b-a0ecebedab67:selfHealth")
 	matches("monitor:14a6b829-6100-49a3-ba3b-a0ecebedab67:other")
 	fmt.Printf("Value of exvar: %v", access.ExVar)
 	//runTogglingChannel("d1")
+	bufferedChannelDemo()
 	checkTicker()
-	var c chan bool
-	if nil != c {
-		close(c)
-	}
+	// var c chan bool // nil channel
 
 	update("i1")
 	checkResponse()
@@ -59,6 +96,33 @@ func main() {
 	checkTokens(str2)
 	//checkCopy()
 	checkContext(5)
+
+	printAll()
+
+	runBot()
+
+	checkMemForInts(100000)
+
+	checkMemForInts(1000000)
+
+	checkMemForStrings(32, 100000)
+
+	checkMemForStrings(32, 1000000)
+
+	fmt.Println("Press enter to continue:")
+	fmt.Scanf("%d", val)
+
+	testCrypto()
+}
+
+func checkMapCopy() {
+	msg := Msg{}
+	msg.Headers = make(map[string]string)
+	msg.Headers["h1"] = "v"
+	msg.Headers["h2"] = "v2"
+	fmt.Printf("before:%v\n", msg)
+	handleMsg(&msg)
+	fmt.Printf("after:%v\n", msg)
 }
 
 func checkTokens(in string) {
@@ -92,4 +156,5 @@ func checkContext(timeout int) {
 	log.Println("Context example completed")
 	startSimpleReadWrite()
 	printSum()
+	deferTest()
 }
